@@ -165,10 +165,9 @@ func (httpConfig *HttpHandler) Profile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	response := customResponse{Status: http.StatusOK, Message: "user's profile", Data: map[string]interface{}{"user": user}}
+	response := customResponse{Status: http.StatusOK, Message: "user's profile", Data: map[string]interface{}{"user": newUserResponse(user)}}
 	json.NewEncoder(w).Encode(response)
 
-	// get the user's details from the database
 }
 
 func hashpassword(password string) (string, error) {
@@ -230,4 +229,18 @@ func (httpConfig *HttpHandler) searchUser(newUser models.User) (field string, er
 	}
 
 	return "", nil
+}
+
+type userResponse struct {
+	ID       int    `json:"id"`
+	Username string `json:"username"`
+	Email    string `json:"email"`
+}
+
+func newUserResponse(user models.User) userResponse {
+	return userResponse{
+		ID:       user.ID,
+		Username: user.Username,
+		Email:    user.Email,
+	}
 }

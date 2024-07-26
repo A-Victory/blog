@@ -74,6 +74,15 @@ func TestCommentFunctions(t *testing.T) {
 		t.Fatalf("Expected at least one comment, got %d", len(comments))
 	}
 
+	// Test GetCommentByID
+	savedComment, err := db.GetCommentByID(commentID)
+	if err != nil {
+		t.Fatalf("Failed to get comment by ID: %v", err)
+	}
+	if savedComment.ID != commentID {
+		t.Fatalf("Expected comment ID %d, got %d", commentID, savedComment.ID)
+	}
+
 	// Test EditComment
 	comment.ID = commentID
 	comment.Content = "Updated test comment."
@@ -83,6 +92,15 @@ func TestCommentFunctions(t *testing.T) {
 	}
 	if id <= 0 {
 		t.Fatalf("Expected to update comment with ID %d, but found %d rows", postID, id)
+	}
+
+	// Verify the comment is updated
+	updatedComment, err := db.GetCommentByID(commentID)
+	if err != nil {
+		t.Fatalf("Failed to get comment by ID: %v", err)
+	}
+	if updatedComment.Content != "Updated test comment." {
+		t.Fatalf("Expected updated comment content, got %s", updatedComment.Content)
 	}
 
 	// Test DeleteComment
@@ -103,5 +121,14 @@ func TestCommentFunctions(t *testing.T) {
 		if c.ID == commentID {
 			t.Fatal("Expected comment to be deleted, but it still exists")
 		}
+	}
+
+	// Verify the comment is not retrievable by ID
+	deletedComment, err := db.GetCommentByID(commentID)
+	if err != nil {
+		t.Fatalf("Failed to get comment by ID: %v", err)
+	}
+	if deletedComment.ID != 0 {
+		t.Fatal("Expected no comment to be found, but found one")
 	}
 }

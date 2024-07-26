@@ -33,6 +33,20 @@ func (httpConfig *HttpHandler) Comment(w http.ResponseWriter, r *http.Request) {
 
 		newComment := models.Comment{}
 
+		post, err := httpConfig.db.GetPostByID(postID)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			response := customResponse{Status: http.StatusInternalServerError, Message: "server error", Data: map[string]interface{}{"msg": "database connection error: " + err.Error()}}
+			json.NewEncoder(w).Encode(response)
+			return
+		}
+		if post == (models.Post{}) {
+			w.WriteHeader(http.StatusNotFound)
+			response := customResponse{Status: http.StatusNotFound, Message: "post not found", Data: map[string]interface{}{"msg": fmt.Sprintf("no post found with id %d", postID)}}
+			json.NewEncoder(w).Encode(response)
+			return
+		}
+
 		if err := json.NewDecoder(r.Body).Decode(&newComment); err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			response := customResponse{Status: http.StatusBadRequest, Message: "error", Data: map[string]interface{}{"message": err.Error()}}
@@ -81,7 +95,31 @@ func (httpConfig *HttpHandler) Comment(w http.ResponseWriter, r *http.Request) {
 				json.NewEncoder(w).Encode(response)
 				return
 			}
+
+			comment, err := httpConfig.db.GetCommentByID(commentID)
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				response := customResponse{Status: http.StatusInternalServerError, Message: "server error", Data: map[string]interface{}{"msg": "database connection error: " + err.Error()}}
+				json.NewEncoder(w).Encode(response)
+				return
+			}
+			if comment == (models.Comment{}) {
+				w.WriteHeader(http.StatusNotFound)
+				response := customResponse{Status: http.StatusNotFound, Message: "post not found", Data: map[string]interface{}{"msg": fmt.Sprintf("no comment found with id: %d", commentID)}}
+				json.NewEncoder(w).Encode(response)
+				return
+			}
+
+			if comment.AuthorID != user.ID {
+				w.WriteHeader(http.StatusBadRequest)
+				response := customResponse{Status: http.StatusBadRequest, Message: "invalid request", Data: map[string]interface{}{"msg": fmt.Sprintf("not the author of the comment on post with id: %d", comment.Postid)}}
+				json.NewEncoder(w).Encode(response)
+				return
+			}
+
 			updateComment.ID = commentID
+			updateComment.Postid = comment.Postid
+			updateComment.AuthorID = user.ID
 
 			id, err := httpConfig.db.EditComment(updateComment)
 			if err != nil {
@@ -133,6 +171,20 @@ func (httpConfig *HttpHandler) Comment(w http.ResponseWriter, r *http.Request) {
 		}
 		offset := (page - 1) * limit
 
+		post, err := httpConfig.db.GetPostByID(postID)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			response := customResponse{Status: http.StatusInternalServerError, Message: "server error", Data: map[string]interface{}{"msg": "database connection error: " + err.Error()}}
+			json.NewEncoder(w).Encode(response)
+			return
+		}
+		if post == (models.Post{}) {
+			w.WriteHeader(http.StatusNotFound)
+			response := customResponse{Status: http.StatusNotFound, Message: "post not found", Data: map[string]interface{}{"msg": fmt.Sprintf("no post found with id %d", postID)}}
+			json.NewEncoder(w).Encode(response)
+			return
+		}
+
 		comments, err := httpConfig.db.GetComments(postID, limit, offset)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -158,6 +210,27 @@ func (httpConfig *HttpHandler) Comment(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 				response := customResponse{Status: http.StatusInternalServerError, Message: "server error", Data: map[string]interface{}{"msg": "error converting string..."}}
+				json.NewEncoder(w).Encode(response)
+				return
+			}
+
+			comment, err := httpConfig.db.GetCommentByID(commentID)
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				response := customResponse{Status: http.StatusInternalServerError, Message: "server error", Data: map[string]interface{}{"msg": "database connection error: " + err.Error()}}
+				json.NewEncoder(w).Encode(response)
+				return
+			}
+			if comment == (models.Comment{}) {
+				w.WriteHeader(http.StatusNotFound)
+				response := customResponse{Status: http.StatusNotFound, Message: "post not found", Data: map[string]interface{}{"msg": fmt.Sprintf("no comment found with id: %d", commentID)}}
+				json.NewEncoder(w).Encode(response)
+				return
+			}
+
+			if comment.AuthorID != user.ID {
+				w.WriteHeader(http.StatusBadRequest)
+				response := customResponse{Status: http.StatusBadRequest, Message: "invalid request", Data: map[string]interface{}{"msg": fmt.Sprintf("not the author of the comment on post with id: %d", comment.Postid)}}
 				json.NewEncoder(w).Encode(response)
 				return
 			}

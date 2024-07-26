@@ -79,7 +79,7 @@ func (httpConfig *HttpHandler) Post(w http.ResponseWriter, r *http.Request) {
 			}
 			if post == (models.Post{}) {
 				w.WriteHeader(http.StatusNotFound)
-				response := customResponse{Status: http.StatusNotFound, Message: "post not found", Data: map[string]interface{}{"msg": fmt.Sprintf("no post found with id %d", postID)}}
+				response := customResponse{Status: http.StatusNotFound, Message: "post not found", Data: map[string]interface{}{"msg": fmt.Sprintf("no post found with id: %d", postID)}}
 				json.NewEncoder(w).Encode(response)
 				return
 			}
@@ -139,6 +139,12 @@ func (httpConfig *HttpHandler) Post(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 				response := customResponse{Status: http.StatusInternalServerError, Message: "server error", Data: map[string]interface{}{"msg": "database connection error: " + err.Error()}}
+				json.NewEncoder(w).Encode(response)
+				return
+			}
+			if post == (models.Post{}) {
+				w.WriteHeader(http.StatusNotFound)
+				response := customResponse{Status: http.StatusNotFound, Message: "post not found", Data: map[string]interface{}{"msg": fmt.Sprintf("no post found with id %d", postID)}}
 				json.NewEncoder(w).Encode(response)
 				return
 			}

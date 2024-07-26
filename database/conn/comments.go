@@ -1,6 +1,7 @@
 package conn
 
 import (
+	"database/sql"
 	"time"
 
 	"github.com/A-Victory/blog/models"
@@ -51,8 +52,12 @@ func (db *DB) DeleteComment(commentID int) (int, error) {
 }
 
 func (db *DB) EditComment(comment models.Comment) (int, error) {
+
+	updatedAt := time.Now().Local().Format("2006-01-02 15:04:05")
+
 	query := "UPDATE comments SET content = ?, updatedAt = ? WHERE id = ? AND authorId = ? AND postId = ?"
-	result, err := db.Conn.DB.Exec(query, comment.Content, time.Now().UTC(), comment.ID, comment.AuthorID, comment.Postid)
+
+	result, err := db.Conn.DB.Exec(query, comment.Content, updatedAt, comment.ID, comment.AuthorID, comment.Postid)
 	if err != nil {
 		return 0, err
 	}
@@ -92,4 +97,21 @@ func (db *DB) GetComments(postID, limit, offset int) ([]models.Comment, error) {
 	}
 
 	return comments, nil
+}
+
+func (db *DB) GetCommentByID(commentID int) (models.Comment, error) {
+	query := "SELECT id, postId, content, authorId, createdAt, updatedAt FROM comments WHERE id = ?"
+	row := db.Conn.DB.QueryRow(query, commentID)
+
+	var comment models.Comment
+	err := row.Scan(&comment.ID, &comment.Postid, &comment.Content, &comment.AuthorID, &comment.CreatedAt, &comment.UpdatedAt)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			// return models.Post{}, fmt.Errorf("no post found with ID %d", postID)
+			return models.Comment{}, nil
+		}
+		return models.Comment{}, err
+	}
+
+	return comment, nil
 }
