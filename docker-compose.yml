@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: blog-api.dockerfile
+    ports:
+      - "8080:80"
+    environment:
+      - PORT=${PORT}
+      - DB_URI=${DB_URI}
+      - DB_PORT=${DB_PORT}
+      - DB_NAME=${DB_NAME}
+      - SINGINGKEY=${SINGINGKEY}
+    volumes:
+      - .:/app # would be commented out when going for production
+    restart: always
+    deploy: 
+      mode: replicated
+      replicas: 1
